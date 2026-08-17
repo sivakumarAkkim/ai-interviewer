@@ -1,69 +1,227 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+const API_URL = "https://ai-interviewer-2-rfp6.onrender.com";
 
 export default function Home() {
+  const [mode, setMode] = useState<"login" | "register">("register");
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const endpoint =
+        mode === "register"
+          ? "/api/auth/register"
+          : "/api/auth/login";
+
+      const body =
+        mode === "register"
+          ? { name, email, password }
+          : { email, password };
+
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Something went wrong");
+      }
+
+      if (mode === "login" && data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user_id", data.user_id);
+      }
+
+      setMessage(
+        mode === "register"
+          ? "Registration successful! You can now login."
+          : "Login successful!"
+      );
+
+      if (mode === "register") {
+        setMode("login");
+        setPassword("");
+      }
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6">
+
+        <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl md:grid-cols-2">
+
+          {/* Left side */}
+          <div className="hidden bg-blue-600 p-12 md:block">
+
+            <div className="flex h-full flex-col justify-center">
+
+              <div className="mb-6 text-5xl">
+                🤖
+              </div>
+
+              <h1 className="text-4xl font-bold">
+                AI Interviewer
+              </h1>
+
+              <p className="mt-5 text-lg leading-8 text-blue-100">
+                Practice realistic interviews with an AI interviewer
+                based on your resume and target job description.
+              </p>
+
+              <div className="mt-10 space-y-4 text-blue-50">
+                <div>✓ Resume analysis</div>
+                <div>✓ Job description matching</div>
+                <div>✓ Technical interview</div>
+                <div>✓ Coding round</div>
+                <div>✓ Performance report</div>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Right side */}
+          <div className="p-8 md:p-12">
+
+            <h2 className="text-3xl font-bold">
+              {mode === "register" ? "Create account" : "Welcome back"}
+            </h2>
+
+            <p className="mt-2 text-slate-400">
+              {mode === "register"
+                ? "Create your AI Interviewer account."
+                : "Login to continue your interview practice."}
+            </p>
+
+            <form
+              onSubmit={handleSubmit}
+              className="mt-8 space-y-5"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+
+              {mode === "register" && (
+                <div>
+                  <label className="mb-2 block text-sm">
+                    Full name
+                  </label>
+
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    required
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="mb-2 block text-sm">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm">
+                  Password
+                </label>
+
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  required
+                  minLength={6}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              {message && (
+                <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-600 py-3 font-semibold hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading
+                  ? "Please wait..."
+                  : mode === "register"
+                    ? "Create Account"
+                    : "Login"}
+              </button>
+
+            </form>
+
+            <div className="mt-6 text-center text-sm text-slate-400">
+
+              {mode === "register"
+                ? "Already have an account?"
+                : "Don't have an account?"}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMode(
+                    mode === "register"
+                      ? "login"
+                      : "register"
+                  )
+                }
+                className="ml-2 font-semibold text-blue-400 hover:text-blue-300"
+              >
+                {mode === "register"
+                  ? "Login"
+                  : "Create account"}
+              </button>
+
+            </div>
+
+          </div>
+
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+      </div>
+    </main>
   );
 }
